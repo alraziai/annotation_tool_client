@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { MagnifyingGlassIcon, XMarkIcon, EyeIcon, ArrowDownTrayIcon } from '@heroicons/react/24/solid';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface AdminStat {
     id: string;
@@ -10,6 +11,8 @@ interface AdminStat {
     reviewed: number;
     progress: number;
     assignedAt: string;
+    completedAt?: string | null;
+    isLocked?: boolean;
 }
 
 interface DetailedReview {
@@ -85,7 +88,7 @@ export const AdminProgress: React.FC = () => {
             window.URL.revokeObjectURL(url);
         } catch (err) {
             console.error('Failed to download Excel:', err);
-            alert('Failed to download Excel file');
+            toast.error('Failed to download Excel file');
         }
     };
 
@@ -96,6 +99,31 @@ export const AdminProgress: React.FC = () => {
 
     return (
         <div className="bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
+            <Toaster 
+                position="top-right"
+                toastOptions={{
+                    duration: 5000,
+                    style: {
+                        background: '#1f2937',
+                        color: '#f3f4f6',
+                        border: '1px solid #374151',
+                    },
+                    success: {
+                        duration: 5000,
+                        iconTheme: {
+                            primary: '#10b981',
+                            secondary: '#f3f4f6',
+                        },
+                    },
+                    error: {
+                        duration: 6000,
+                        iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#f3f4f6',
+                        },
+                    },
+                }}
+            />
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                 <h2 className="text-2xl font-bold text-white">Progress Overview</h2>
 
@@ -123,6 +151,7 @@ export const AdminProgress: React.FC = () => {
                                 <th className="p-4 font-bold">Batch</th>
                                 <th className="p-4 font-bold">Progress</th>
                                 <th className="p-4 font-bold text-center">Completion</th>
+                                <th className="p-4 font-bold text-center">Status</th>
                                 <th className="p-4 font-bold text-right">Assigned Date</th>
                                 <th className="p-4 font-bold text-center">Actions</th>
                             </tr>
@@ -132,7 +161,7 @@ export const AdminProgress: React.FC = () => {
                                 <tr key={stat.id} className="hover:bg-gray-700/50 transition">
                                     <td className="p-4 font-bold text-white">{stat.doctorName}</td>
                                     <td className="p-4 text-gray-300">
-                                        <span className="bg-gray-700 px-2 py-1 rounded text-xs border border-gray-600">
+                                        <span className="bg-gray-700 px-2 py-1 rounded text-xs border border-gray-600 whitespace-nowrap inline-block">
                                             {stat.batchName}
                                         </span>
                                     </td>
@@ -148,9 +177,20 @@ export const AdminProgress: React.FC = () => {
                                         </div>
                                     </td>
                                     <td className="p-4 text-center">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${stat.reviewed === stat.total ? 'bg-green-900/50 text-green-400 border border-green-800' : 'bg-blue-900/50 text-blue-400 border border-blue-800'}`}>
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap inline-block ${stat.reviewed === stat.total ? 'bg-green-900/50 text-green-400 border border-green-800' : 'bg-blue-900/50 text-blue-400 border border-blue-800'}`}>
                                             {stat.reviewed} / {stat.total}
                                         </span>
+                                    </td>
+                                    <td className="p-4 text-center">
+                                        {stat.isLocked ? (
+                                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-purple-900/50 text-purple-400 border border-purple-800 inline-flex items-center gap-1 whitespace-nowrap">
+                                                🔒 Locked
+                                            </span>
+                                        ) : (
+                                            <span className="px-3 py-1 rounded-full text-xs font-bold bg-yellow-900/50 text-yellow-400 border border-yellow-800 whitespace-nowrap inline-block">
+                                                In Progress
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="p-4 text-right text-gray-500 text-sm font-mono">
                                         {new Date(stat.assignedAt).toLocaleDateString()}
@@ -166,13 +206,13 @@ export const AdminProgress: React.FC = () => {
                                             </button>
                                             <button
                                                 onClick={() => handleDownloadExcel(stat)}
-                                                disabled={stat.progress < 100}
+                                                disabled={!stat.isLocked}
                                                 className={`px-3 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${
-                                                    stat.progress === 100 
+                                                    stat.isLocked 
                                                         ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer' 
                                                         : 'bg-gray-700 text-gray-500 cursor-not-allowed'
                                                 }`}
-                                                title={stat.progress < 100 ? 'Complete assignment to download' : 'Download Excel report'}
+                                                title={!stat.isLocked ? 'Doctor must mark assignment as complete to download' : 'Download Excel report'}
                                             >
                                                 <ArrowDownTrayIcon className="w-4 h-4" />
                                                 Download

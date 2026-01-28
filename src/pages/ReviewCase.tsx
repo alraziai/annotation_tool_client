@@ -7,6 +7,7 @@ import ImageMagnifier from '../components/ImageMagnifier';
 import { ReviewSidebar } from '../components/ReviewSidebar';
 import { ReviewDetailsPanel } from '../components/ReviewDetailsPanel';
 import { Bars3Icon } from '@heroicons/react/24/solid';
+import toast, { Toaster } from 'react-hot-toast';
 
 export const ReviewCase: React.FC = () => {
     const { id } = useParams();
@@ -161,13 +162,13 @@ export const ReviewCase: React.FC = () => {
             if (nextInstanceId) {
                 navigate(`/doctor/review/${nextInstanceId}`);
             } else {
-                alert("Batch Completed!");
+                toast.success("Batch Completed! You can now review and edit cases or mark the batch as complete.");
                 navigate('/doctor/dashboard');
             }
 
         } catch (error) {
             console.error(error);
-            alert("Failed to submit reviews.");
+            toast.error("Failed to submit reviews. Please try again.");
         } finally {
             setSubmitting(false);
         }
@@ -181,6 +182,31 @@ export const ReviewCase: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-200 flex flex-col h-screen font-sans overflow-hidden">
+            <Toaster 
+                position="top-right"
+                toastOptions={{
+                    duration: 5000,
+                    style: {
+                        background: '#1f2937',
+                        color: '#f3f4f6',
+                        border: '1px solid #374151',
+                    },
+                    success: {
+                        duration: 5000,
+                        iconTheme: {
+                            primary: '#10b981',
+                            secondary: '#f3f4f6',
+                        },
+                    },
+                    error: {
+                        duration: 6000,
+                        iconTheme: {
+                            primary: '#ef4444',
+                            secondary: '#f3f4f6',
+                        },
+                    },
+                }}
+            />
             {/* Header */}
             <header className="bg-gray-800 p-2 shadow-lg flex justify-between items-center z-20 border-b border-gray-700 shrink-0 h-14">
                 <div className="flex items-center gap-4">
