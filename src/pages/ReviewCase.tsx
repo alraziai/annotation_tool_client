@@ -30,7 +30,7 @@ export const ReviewCase: React.FC = () => {
     const [reviews, setReviews] = useState<Record<string, { status: boolean | null, comment: string }>>({});
 
     // Image Path (from the primary instance)
-    const imgUrl = (instance && instance.case?.imagePath) ? `http://localhost:3000/uploads/${instance.case.imagePath}` : null;
+    const imgUrl = (instance && instance.case?.imagePath) ? `${import.meta.env.VITE_API_URL}/uploads/${instance.case.imagePath}` : null;
 
     // 1. Load Primary Instance & Batch Data
     useEffect(() => {
@@ -38,14 +38,14 @@ export const ReviewCase: React.FC = () => {
             setLoading(true);
             try {
                 // A. Load specific instance from URL to get context
-                const res = await axios.get(`http://localhost:3000/cases/instance/${id}`);
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/cases/instance/${id}`);
                 setInstance(res.data);
                 const currentCaseId = res.data.case.id;
 
                 // B. Ensure we have the full batch loaded to find siblings
                 let currentBatchInstances = batchInstances;
                 if (batchInstances.length === 0 || (batchInstances[0] && batchInstances[0].case?.batchId !== res.data.case.batchId)) {
-                    const resBatches = await axios.get('http://localhost:3000/cases/assigned');
+                    const resBatches = await axios.get(`${import.meta.env.VITE_API_URL}/cases/assigned`);
                     const myBatch = resBatches.data.find((b: any) => b.id === res.data.case.batchId);
                     if (myBatch) {
                         const all: any[] = [];
@@ -120,7 +120,7 @@ export const ReviewCase: React.FC = () => {
                     // Update visual state locally
                     updateLocalReviewStatus(inst.id, r.status);
                     // Send to API
-                    return axios.post(`http://localhost:3000/cases/instance/${inst.id}/review`, r);
+                    return axios.post(`${import.meta.env.VITE_API_URL}/cases/instance/${inst.id}/review`, r);
                 }
                 return Promise.resolve();
             }));

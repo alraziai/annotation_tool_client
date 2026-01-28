@@ -39,7 +39,7 @@ export const AdminProgress: React.FC = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await axios.get('http://localhost:3000/cases/admin/stats');
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/cases/admin/stats`);
                 setStats(res.data);
             } catch (err) {
                 console.error(err);
@@ -55,7 +55,7 @@ export const AdminProgress: React.FC = () => {
         setLoadingDetails(true);
         try {
             // Fetch detailed reviews for this assignment
-            const res = await axios.get(`http://localhost:3000/cases/admin/assignment/${stat.id}/reviews`);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/cases/admin/assignment/${stat.id}/reviews`);
             setDetailedReviews(res.data);
         } catch (err) {
             console.error('Failed to fetch review details:', err);
@@ -73,7 +73,7 @@ export const AdminProgress: React.FC = () => {
     const handleDownloadExcel = async (stat: AdminStat) => {
         try {
             const response = await axios.get(
-                `http://localhost:3000/cases/admin/assignment/${stat.id}/export`,
+                `${import.meta.env.VITE_API_URL}/cases/admin/assignment/${stat.id}/export`,
                 { responseType: 'blob' }
             );
             

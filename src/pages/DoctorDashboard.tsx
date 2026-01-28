@@ -30,7 +30,7 @@ export const DoctorDashboard: React.FC = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        axios.get('http://localhost:3000/cases/assigned').then(res => setBatches(res.data));
+        axios.get(`${import.meta.env.VITE_API_URL}/cases/assigned`).then(res => setBatches(res.data));
     }, []);
 
     const startReview = (batch: Batch) => {
@@ -63,12 +63,12 @@ export const DoctorDashboard: React.FC = () => {
         
         setIsCompleting(true);
         try {
-            await axios.post(`http://localhost:3000/cases/assignment/${selectedBatchId}/complete`);
+            await axios.post(`${import.meta.env.VITE_API_URL}/cases/assignment/${selectedBatchId}/complete`);
             toast.success('Assignment marked as complete and locked!');
             setShowModal(false);
             setSelectedBatchId(null);
             // Refresh the batch list
-            const res = await axios.get('http://localhost:3000/cases/assigned');
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/cases/assigned`);
             setBatches(res.data);
         } catch (error: any) {
             toast.error(error.response?.data?.message || 'Failed to mark assignment as complete');

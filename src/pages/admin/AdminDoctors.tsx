@@ -20,7 +20,7 @@ export const AdminDoctors: React.FC = () => {
 
     const fetchDoctors = async () => {
         try {
-            const res = await axios.get('http://localhost:3000/users');
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/users`);
             setDoctors(res.data.filter((u: User) => u.role === 'DOCTOR'));
         } catch (error) { console.error(error); }
     };
@@ -29,7 +29,7 @@ export const AdminDoctors: React.FC = () => {
         e.preventDefault();
         setCreateMsg('');
         try {
-            await axios.post('http://localhost:3000/users', newDoctor);
+            await axios.post(`${import.meta.env.VITE_API_URL}/users`, newDoctor);
             setCreateMsg('Doctor created successfully!');
             setNewDoctor({ name: '', email: '', password: '' });
             fetchDoctors();

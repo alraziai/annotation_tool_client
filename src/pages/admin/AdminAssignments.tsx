@@ -24,8 +24,8 @@ export const AdminAssignments: React.FC = () => {
         const fetch = async () => {
             try {
                 const [dRes, bRes] = await Promise.all([
-                    axios.get('http://localhost:3000/users'),
-                    axios.get('http://localhost:3000/cases/batches')
+                    axios.get(`${import.meta.env.VITE_API_URL}/users`),
+                    axios.get(`${import.meta.env.VITE_API_URL}/cases/batches`)
                 ]);
                 setDoctors(dRes.data.filter((u: User) => u.role === 'DOCTOR'));
                 setBatches(bRes.data);
@@ -46,7 +46,7 @@ export const AdminAssignments: React.FC = () => {
         if (!selectedBatch || selectedDoctors.length === 0) return;
 
         try {
-            await axios.post('http://localhost:3000/cases/assign', {
+            await axios.post(`${import.meta.env.VITE_API_URL}/cases/assign`, {
                 batchId: selectedBatch,
                 doctorIds: selectedDoctors
             });
