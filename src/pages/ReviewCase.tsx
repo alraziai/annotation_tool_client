@@ -29,8 +29,8 @@ export const ReviewCase: React.FC = () => {
     // Form State: Map instanceId -> Review Data
     const [reviews, setReviews] = useState<Record<string, { status: boolean | null, comment: string }>>({});
 
-    // Image Path (from the primary instance)
-    const imgUrl = (instance && instance.case?.imagePath) ? `${import.meta.env.VITE_API_URL}/uploads/${instance.case.imagePath}` : null;
+    // Image URL (signed URL from backend)
+    const imgUrl = instance?.case?.imageUrl || null;
 
     // 1. Load Primary Instance & Batch Data
     useEffect(() => {
