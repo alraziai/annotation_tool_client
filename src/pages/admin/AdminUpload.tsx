@@ -31,41 +31,124 @@ export const AdminUpload: React.FC = () => {
         
         // Generate a unique session ID for this upload
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        // Connect to SSE for progress updates
-        const eventSource = new EventSource(
-            `${import.meta.env.VITE_API_URL}/upload/progress/${sessionId}`
-        );
-
-        eventSource.onmessage = (event) => {
-            try {
-                const data: ProgressData = JSON.parse(event.data);
-                console.log('Progress update:', data);
-                setProgress(data);
-            } catch (err) {
-                console.error('Error parsing progress data:', err);
-            }
-        };
-
-        eventSource.onerror = (error) => {
-            console.error('SSE error:', error);
-            eventSource.close();
-        };
-
-        const formData = new FormData();
-        formData.append('batchName', batchName);
-        formData.append('sessionId', sessionId);
-        formData.append('excel', fileLocal.excel);
-        formData.append('images', fileLocal.zip);
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${import.meta.env.VITE_API_URL}/upload`, formData, {
-                headers: { 
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${token}`
+            
+            // Step 1: Get signed URLs for direct upload to GCS
+            setProgress({
+                percentage: 5,
+                message: 'Getting upload URLs...',
+                current: 1,
+                total: 100
+            });
+
+            const { data: urlsData } = await axios.post(
+                `${import.meta.env.VITE_API_URL}/upload/signed-urls`,
+                { batchName },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+
+            const { excel, images, excelFileName, imagesFileName } = urlsData;
+
+            // Step 2: Upload Excel file directly to GCS using POST policy
+            setProgress({
+                percentage: 10,
+                message: 'Uploading Excel file...',
+                current: 2,
+                total: 100
+            });
+
+            const excelFormData = new FormData();
+            Object.entries(excel.fields).forEach(([key, value]) => {
+                excelFormData.append(key, value as string);
+            });
+            excelFormData.append('file', fileLocal.excel);
+
+            await axios.post(excel.url, excelFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 40) / (progressEvent.total || 1));
+                    setProgress({
+                        percentage: 10 + percentCompleted,
+                        message: `Uploading Excel file... ${percentCompleted}%`,
+                        current: 2,
+                        total: 100
+                    });
                 }
             });
+
+            // Step 3: Upload ZIP file directly to GCS using POST policy
+            setProgress({
+                percentage: 50,
+                message: 'Uploading images...',
+                current: 3,
+                total: 100
+            });
+
+            const imagesFormData = new FormData();
+            Object.entries(images.fields).forEach(([key, value]) => {
+                imagesFormData.append(key, value as string);
+            });
+            imagesFormData.append('file', fileLocal.zip);
+
+            await axios.post(images.url, imagesFormData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                },
+                onUploadProgress: (progressEvent) => {
+                    const percentCompleted = Math.round((progressEvent.loaded * 40) / (progressEvent.total || 1));
+                    setProgress({
+                        percentage: 50 + percentCompleted,
+                        message: `Uploading images... ${percentCompleted}%`,
+                        current: 3,
+                        total: 100
+                    });
+                }
+            });
+
+            // Step 4: Connect to SSE for processing progress
+            setProgress({
+                percentage: 90,
+                message: 'Files uploaded, starting processing...',
+                current: 4,
+                total: 100
+            });
+
+            const eventSource = new EventSource(
+                `${import.meta.env.VITE_API_URL}/upload/progress/${sessionId}`
+            );
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const data: ProgressData = JSON.parse(event.data);
+                    console.log('Progress update:', data);
+                    setProgress(data);
+                } catch (err) {
+                    console.error('Error parsing progress data:', err);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                eventSource.close();
+            };
+
+            // Step 5: Trigger server-side processing
+            await axios.post(
+                `${import.meta.env.VITE_API_URL}/upload/process-uploaded`,
+                {
+                    batchName,
+                    excelFileName,
+                    imagesFileName,
+                    sessionId
+                },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+
+            eventSource.close();
             setMessage('Upload successful!');
             setBatchName('');
             setFileLocal({ excel: null, zip: null });
@@ -74,7 +157,6 @@ export const AdminUpload: React.FC = () => {
             setMessage('Upload failed: ' + (err.response?.data?.message || err.message));
         } finally {
             setUploading(false);
-            eventSource.close();
         }
     };
 
